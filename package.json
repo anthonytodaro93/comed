@@ -1,5 +1,11 @@
 {
   "name": "comed-proxy",
   "version": "1.0.0",
-  "type": "commonjs"
+  "main": "api/comed/index.js",
+  "scripts": {
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": "18.x"
+  }
 }
