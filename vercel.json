@@ -1,8 +1,9 @@
 {
-  "routes": [
+  "version": 2,
+  "builds": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "api/comed/index.js",
+      "use": "@vercel/node"
     }
   ]
 }
