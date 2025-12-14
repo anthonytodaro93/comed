@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComEd Live Price</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#000000">
+  <style>
+    body {margin:0;height:100vh;background:#000;color:#0f0;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+    #price {font-size:20vw;font-weight:bold;margin:0;}
+    #label {font-size:6vw;margin-top:10px;opacity:0.8;}
+    #time {font-size:4vw;margin-top:40px;opacity:0.6;}
+    .loading::after {content:'.';animation:dots 1.5s steps(4,end) infinite;}
+    @keyframes dots{0%,20%{content:'.'}40%{content:'..'}60%{content:'...'}80%,100%{content:'....'}}
+  </style>
+</head>
+<body>
+  <div id="price">Loading<span class="loading"></span></div>
+  <div id="label">USD per kWh</div>
+  <div id="time"></div>
+
+  <script>
+    const priceEl = document.getElementById('price');
+    const timeEl  = document.getElementById('time');
+
+    async function update() {
+      priceEl.innerHTML = 'Loading<span class="loading"></span>';
+      try {
+        // Rock-solid proxy – works everywhere, even from local files
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://hourlypricing.comed.com/api?type=5minutefeed');
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error('Network response not ok');
+        const text = await res.text();
+        const json = JSON.parse(text);  // Direct JSON, no wrapper needed
+
+        const price = parseFloat(json[0].price).toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+        const date = new Date(parseInt(json[0].millisUTC, 10));
+        if (isNaN(date.getTime())) throw new Error('Invalid date');
+        const timeStr = date.toLocaleString('en-US', {
+          timeZone: 'America/Chicago',
+          month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
+        });
+
+        priceEl.textContent = price +'¢';
+        timeEl.textContent = 'Updated ' + timeStr + ' CST';
+
+        // Save for offline use
+        localStorage.setItem('lastPrice', JSON.stringify({price, timeStr}));
+      } catch (e) {
+        console.error('Update error:', e);  // For debugging in browser console
+        // Offline fallback
+        const cached = localStorage.getItem('lastPrice');
+        if (cached) {
+          const {price, timeStr} = JSON.parse(cached);
+          priceEl.textContent = '¢' + price;
+          timeEl.textContent = 'Offline – last: ' + timeStr + ' CST';
+        } else {
+          priceEl.textContent = 'No connection';
+          timeEl.textContent = 'Check internet or browser console (F12)';
+        }
+      }
+    }
+
+    update();
+    setInterval(update, 60000); // every minute
+
+    // Make it a real PWA (optional but nice)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(console.error);
+    }
+  </script>
+</body>
+</html>

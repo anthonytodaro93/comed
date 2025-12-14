@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComEd Live Price</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#ffffff">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #ffffff;
+      color: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    header {
+      font-size: 6vw;
+      font-weight: 600;
+      color: #000000;
+      margin: 15px 0 5px;
+      text-align: center;
+    }
+    #mainContainer {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+      box-sizing: border-box;
+      transition: all 0.4s ease;
+    }
+    #mainContainer.detailed {
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 10px;
+      gap: 20px;
+    }
+    #currentSection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: #f0f8f0;
+      border-radius: 16px;
+      border: 1px solid #d0e8d0;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      width: 90%;
+      max-width: 520px;
+      padding: 24px;
+    }
+    #detailsContainer {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      align-items: center;
+      gap: 20px;
+    }
+    #detailsContainer.show {
+      display: flex;
+    }
+    #historySection, #averageSection {
+      background: #f0f8f0;
+      border-radius: 16px;
+      border: 1px solid #d0e8d0;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      width: 90%;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #historySection {
+      max-height: 40vh;
+      overflow-y: auto;
+    }
+    #price {
+      font-size: 11vw;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    #averagePrice {
+      font-size: 9vw;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -1px;
+      line-height: 1;
+      color: #008b00;
+      text-align: center;
+    }
+    #label, #averageLabel {
+      font-size: 4.5vw;
+      margin: 10px 0 6px;
+      color: #333;
+      text-align: center;
+    }
+    #time {
+      font-size: 3.8vw;
+      color: #0b8b42;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    #averageHeader {
+      font-size: 3.8vw;
+      font-weight: 600;
+      color: #000000;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 16px;
+      font-size: 4vw;
+      width: 100%;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    .history-item .price {
+      font-weight: 700;
+    }
+    .buttons {
+      margin: 10px 0 20px;
+      display: flex;
+      gap: 20px;
+    }
+    button {
+      padding: 14px 36px;
+      font-size: 5vw;
+      font-weight: 600;
+      background: linear-gradient(to bottom, #e0ffe0, #a0e0a0);
+      color: #000000;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 5px 12px rgba(0, 139, 66, 0.2);
+      transition: all 0.2s;
+    }
+    button:active {
+      transform: translateY(2px);
+      box-shadow: 0 3px 8px rgba(0, 139, 66, 0.2);
+    }
+    .loading::after {
+      content: '.';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60% { content: '...'; }
+      80%, 100% { content: '....'; }
+    }
+    @media (min-width: 768px) {
+      #mainContainer.detailed {
+        flex-direction: row;
+        gap: 20px;
+      }
+      #detailsContainer.show {
+        flex-direction: row;
+        width: auto;
+      }
+      #currentSection, #historySection, #averageSection {
+        width: auto;
+        min-width: 280px;
+        max-width: 400px;
+        padding: 20px;
+      }
+      header {
+        margin: 30px 0 20px;
+      }
+      #currentSection {
+        padding: 32px;
+      }
+      #price { font-size: 9vw; }
+      #averagePrice { font-size: 7vw; }
+      #label, #averageLabel { font-size: 3.5vw; }
+      #time { font-size: 3vw; }
+      #averageHeader { font-size: 3vw; }
+      .history-item { font-size: 2.2vw; }
+      .buttons {
+        margin: 30px 0 50px;
+      }
+      button { font-size: 3.5vw; padding: 12px 40px; }
+    }
+  </style>
+</head>
+<body>
+  <header>ComEd Hourly Pricing</header>
+
+  <div id="mainContainer" class="detailed">
+    <div id="currentSection">
+      <div id="price" aria-live="polite">Loading<span class="loading"></span></div>
+      <div id="label">cents per kWh</div>
+      <div id="time"></div>
+    </div>
+
+    <div id="detailsContainer" class="show">
+      <div id="historySection">
+        <div id="historyHeader">Price History</div>
+      </div>
+
+      <div id="averageSection">
+        <div id="averageHeader">Hour Average</div>
+        <div id="averagePrice">--</div>
+        <div id="averageLabel">cents per kWh</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button id="toggleView">Basic</button>
+    <button id="refresh">Refresh</button>
+  </div>
+
+  <script>
+    const priceEl = document.getElementById('price');
+    const timeEl = document.getElementById('time');
+    const averagePriceEl = document.getElementById('averagePrice');
+    const refreshBtn = document.getElementById('refresh');
+    const toggleBtn = document.getElementById('toggleView');
+    const mainContainer = document.getElementById('mainContainer');
+    const detailsContainer = document.getElementById('detailsContainer');
+    const historySection = document.getElementById('historySection');
+
+    const COMED_URL = 'https://hourlypricing.comed.com/api?type=5minutefeed';
+
+    // Back to the reliable codetabs proxy
+    const PROXY_URL = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(COMED_URL);
+
+    // For quick-tap cache clear
+    let tapCount = 0;
+    let firstTapTime = null;
+    const TAP_WINDOW = 20000; // 20 seconds
+    const REQUIRED_TAPS = 10;
+
+    function formatPrice(rawPrice) {
+      let price = parseFloat(rawPrice).toFixed(3);
+      return price.replace(/\.?0+$/, '');
+    }
+
+    function formatAverage(rawPrice) {
+      let price = parseFloat(rawPrice).toFixed(1);
+      return price.replace(/\.0$/, '');
+    }
+
+    function formatTime(millisUTC) {
+      const date = new Date(parseInt(millisUTC, 10));
+      return date.toLocaleString('en-US', {
+        timeZone: 'America/Chicago',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+      });
+    }
+
+    function getPriceColor(value) {
+      if (value <= 0) return 'linear-gradient(45deg, #ff0000, #ff7700, #ffff00, #00ff00, #0000ff, #8b00ff)';
+      if (value < 5) return '#008b00';
+      if (value > 5.1) return '#c00000';
+      return '#000000';
+    }
+
+    function renderHistory(entries) {
+      const header = document.getElementById('historyHeader');
+      historySection.innerHTML = '';
+      historySection.appendChild(header);
+
+      if (entries.length === 0) {
+        const div = document.createElement('div');
+        div.textContent = 'No previous prices';
+        div.style.padding = '20px';
+        div.style.textAlign = 'center';
+        historySection.appendChild(div);
+        return;
+      }
+
+      entries.forEach(entry => {
+        const priceValue = parseFloat(entry.price);
+        const priceStr = formatPrice(entry.price);
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <span>${formatTime(entry.millisUTC)}</span>
+          <span class="price" style="color: ${getPriceColor(priceValue)}">${priceStr}¢</span>
+        `;
+        historySection.appendChild(div);
+      });
+    }
+
+    function updateAverage(prices) {
+      if (prices.length === 0) {
+        averagePriceEl.textContent = '--';
+        return;
+      }
+      const sum = prices.reduce((acc, p) => acc + parseFloat(p.price), 0);
+      const avg = sum / prices.length;
+      const avgStr = formatAverage(avg);
+      averagePriceEl.textContent = avgStr + '¢';
+      averagePriceEl.style.color = '#008b00';
+      averagePriceEl.style.background = 'none';
+    }
+
+    async function fetchPrice() {
+      const res = await fetch(PROXY_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }
+
+    async function update(showLoading = false) {
+      if (showLoading) {
+        priceEl.innerHTML = 'Loading<span class="loading"></span>';
+      }
+
+      const cached = localStorage.getItem('lastPrice');
+      if (cached) {
+        const {price, timeStr, value} = JSON.parse(cached);
+        priceEl.textContent = price + '¢';
+        priceEl.style.color = getPriceColor(value);
+        if (value <= 0) {
+          priceEl.style.background = getPriceColor(value);
+          priceEl.style.backgroundClip = 'text';
+          priceEl.style.webkitBackgroundClip = 'text';
+          priceEl.style.color = 'transparent';
+        } else {
+          priceEl.style.background = 'none';
+        }
+        timeEl.textContent = 'Last: ' + timeStr;
+      }
+
+      try {
+        const json = await fetchPrice();
+
+        const current = json[0];
+        const priceValue = parseFloat(current.price);
+        const priceStr = formatPrice(current.price);
+        const currentTimeStr = formatTime(current.millisUTC);
+
+        priceEl.textContent = priceStr + '¢';
+        priceEl.style.color = getPriceColor(priceValue);
+        if (priceValue <= 0) {
+          priceEl.style.background = getPriceColor(priceValue);
+          priceEl.style.backgroundClip = 'text';
+          priceEl.style.webkitBackgroundClip = 'text';
+          priceEl.style.color = 'transparent';
+        } else {
+          priceEl.style.background = 'none';
+        }
+        timeEl.textContent = 'Updated ' + currentTimeStr;
+
+        const previous10 = json.slice(1, 11);
+        const last12Previous = json.slice(1, 13);
+
+        if (detailsContainer.classList.contains('show')) {
+          renderHistory(previous10);
+          updateAverage(last12Previous);
+        }
+
+        localStorage.setItem('lastPrice', JSON.stringify({
+          price: priceStr,
+          timeStr: currentTimeStr,
+          value: priceValue
+        }));
+      } catch (e) {
+        console.error('Fetch failed:', e);
+        if (!cached) {
+          priceEl.textContent = 'No connection';
+          priceEl.style.color = '#000';
+          timeEl.textContent = 'Check internet';
+        }
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    refreshBtn.addEventListener('click', () => {
+      const now = Date.now();
+      if (firstTapTime === null || now - firstTapTime > TAP_WINDOW) {
+        firstTapTime = now;
+        tapCount = 1;
+      } else {
+        tapCount++;
+      }
+
+      if (tapCount >= REQUIRED_TAPS) {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ action: 'clearCache' });
+        }
+        localStorage.clear();
+        alert('PWA cache cleared! Reloading...');
+        location.reload();
+      } else {
+        update(true);
+      }
+    });
+
+    toggleBtn.addEventListener('click', () => {
+      const isDetailed = detailsContainer.classList.toggle('show');
+      mainContainer.classList.toggle('detailed', isDetailed);
+
+      if (isDetailed) {
+        update(true);
+        toggleBtn.textContent = 'Basic';
+      } else {
+        toggleBtn.textContent = 'Detailed';
+      }
+    });
+
+    update(false);
+    setInterval(() => update(false), 60000);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(console.error);
+
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'cacheCleared') {
+          console.log('Cache cleared by service worker');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
